@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bacteria Game Test</title>
+    <link rel="stylesheet" href="styles.css">
+    <style>
+        .test-panel {
+            margin-top: 20px;
+            padding: 10px;
+            background-color: #f5f5f5;
+            border-radius: 5px;
+        }
+        .test-btn {
+            margin: 5px;
+            padding: 5px 10px;
+            background-color: #5ba5e6;
+            color: white;
+            border: none;
+            border-radius: 3px;
+            cursor: pointer;
+        }
+        .test-log {
+            margin-top: 10px;
+            padding: 10px;
+            background-color: #333;
+            color: #fff;
+            font-family: monospace;
+            height: 150px;
+            overflow-y: auto;
+            border-radius: 3px;
+        }
+    </style>
+</head>
+<body>
+    <h1>Simple Bacteria Game Test</h1>
+    <div class="controls">
+        <button id="startButton">Start Game</button>
+    </div>
+    <p>Use arrow keys or WASD to move</p>
+    <canvas id="gameCanvas" width="600" height="400"></canvas>
+    <div class="game-info">
+        <p>Size: <span id="size">10</span> | Children: <span id="children">0</span> | Nutrients: <span id="nutrients">0</span></p>
+    </div>
+    <div class="game-over" id="gameOver">
+        <h2>Game Over!</h2>
+        <p>Your bacteria reached a size of <span id="finalSize">0</span></p>
+        <button id="restartButton">Play Again</button>
+    </div>
+
+    <div class="test-panel">
+        <h3>Test Panel</h3>
+        <button class="test-btn" id="testSpawnNutrient">Spawn Nutrient</button>
+        <button class="test-btn" id="testSpawnEnemy">Spawn Enemy</button>
+        <button class="test-btn" id="testSplitBacteria">Split Bacteria</button>
+        <button class="test-btn" id="testGameOver">Test Game Over</button>
+        <div class="test-log" id="testLog"></div>
+    </div>
+
+    <!-- Load JavaScript files in the correct order -->
+    <script src="entities.js"></script>
+    <script src="renderer.js"></script>
+    <script src="input.js"></script>
+    <script src="game.js"></script>
+    <script src="main.js"></script>
+    
+    <script>
+        // Test functionality
+        document.addEventListener('DOMContentLoaded', function() {
+            const logElement = document.getElementById('testLog');
+            
+            function log(message) {
+                logElement.innerHTML += `<div>${message}</div>`;
+                logElement.scrollTop = logElement.scrollHeight;
+            }
+            
+            // Log initial load
+            log('Test page loaded successfully');
+            
+            // Test buttons
+            document.getElementById('testSpawnNutrient').addEventListener('click', function() {
+                if (!canvas) return;
+                
+                nutrients.push(spawnNutrient(canvas.width, canvas.height));
+                log(`Nutrient spawned. Total: ${nutrients.length}`);
+                
+                if (!isGameRunning) {
+                    draw();
+                }
+            });
+            
+            document.getElementById('testSpawnEnemy').addEventListener('click', function() {
+                if (!canvas) return;
+                
+                enemies.push(spawnEnemy(canvas.width, canvas.height));
+                log(`Enemy spawned. Total: ${enemies.length}`);
+                
+                if (!isGameRunning) {
+                    draw();
+                }
+            });
+            
+            document.getElementById('testSplitBacteria').addEventListener('click', function() {
+                bacteria.size = Math.max(bacteria.size, 20); // Ensure bacteria is big enough to split
+                splitBacteria();
+                log(`Bacteria split. Children: ${children.length}`);
+                
+                if (!isGameRunning) {
+                    draw();
+                }
+            });
+            
+            document.getElementById('testGameOver').addEventListener('click', function() {
+                gameOver();
+                log('Game over triggered');
+            });
+        });
+    </script>
+</body>
+</html> 

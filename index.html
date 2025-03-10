@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bacteria Evolution Game</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 20px;
+            background-color: #1a1a1a;
+            color: white;
+            font-family: Arial, sans-serif;
+            overflow: hidden;
+        }
+
+        canvas {
+            background-color: #000;
+            border-radius: 10px;
+        }
+
+        .controls {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            background-color: rgba(0, 0, 0, 0.7);
+            padding: 10px;
+            border-radius: 5px;
+        }
+
+        .bacteria-option:hover {
+            background-color: rgba(255, 255, 255, 0.1);
+        }
+
+        #tutorial {
+            position: absolute;
+            bottom: 10px;
+            left: 10px;
+            background-color: rgba(0, 0, 0, 0.7);
+            padding: 10px;
+            border-radius: 5px;
+            max-width: 300px;
+        }
+        
+        #loading {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.8);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 2000;
+        }
+        
+        .spinner {
+            border: 5px solid #333;
+            border-top: 5px solid #4CAF50;
+            border-radius: 50%;
+            width: 50px;
+            height: 50px;
+            animation: spin 1s linear infinite;
+            margin-bottom: 20px;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        #start-game-button {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            padding: 15px 30px;
+            font-size: 20px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            z-index: 1000;
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <!-- Loading screen -->
+    <div id="loading">
+        <div class="spinner"></div>
+        <h2>Loading Game...</h2>
+        <p>If the game doesn't load within a few seconds, please check your browser console for errors.</p>
+    </div>
+
+    <!-- Explicitly add a start button in case JavaScript has issues -->
+    <button id="start-game-button">Start Game</button>
+
+    <canvas id="gameCanvas"></canvas>
+    
+    <div class="controls">
+        <div>WASD or Arrow Keys to move</div>
+        <div>Space to restart when game over</div>
+    </div>
+
+    <div id="tutorial">
+        <h3>How to Play:</h3>
+        <ul>
+            <li>Consume nutrients to grow:
+                <ul>
+                    <li>Green: Carbohydrates - Quick energy</li>
+                    <li>Orange: Proteins - Better growth</li>
+                    <li>Yellow: Lipids - Best growth (requires enzyme)</li>
+                </ul>
+            </li>
+            <li>Watch out for immune cells:
+                <ul>
+                    <li>White: Neutrophils - Fast but short-lived</li>
+                    <li>Gray: Macrophages - Can eat multiple bacteria</li>
+                    <li>Light Blue: Antibodies - Tag you for other cells</li>
+                </ul>
+            </li>
+            <li>Form colonies with other bacteria for protection and resource sharing</li>
+        </ul>
+    </div>
+
+    <script>
+        // Fallback initialization if module loading fails
+        let moduleLoadFailed = false;
+        
+        // Error handling for module loading
+        window.addEventListener('error', function(event) {
+            console.error('Script error detected:', event);
+            moduleLoadFailed = true;
+            
+            const loading = document.getElementById('loading');
+            if (loading) {
+                loading.style.display = 'none';
+            }
+            
+            const startButton = document.getElementById('start-game-button');
+            if (startButton) {
+                startButton.style.display = 'block';
+            }
+        });
+        
+        // Show start button if modules haven't loaded after 5 seconds
+        setTimeout(() => {
+            const loading = document.getElementById('loading');
+            if (loading && loading.style.display !== 'none') {
+                loading.style.display = 'none';
+                
+                const startButton = document.getElementById('start-game-button');
+                if (startButton) {
+                    startButton.style.display = 'block';
+                }
+            }
+        }, 5000);
+        
+        document.getElementById('start-game-button').addEventListener('click', function() {
+            this.style.display = 'none';
+            // Load the fallback game starter
+            const script = document.createElement('script');
+            script.src = 'src/startGame.js';
+            document.body.appendChild(script);
+        });
+    </script>
+
+    <!-- Load main script as a module -->
+    <script type="module">
+        try {
+            // Check if the module system works by importing a simple module
+            import('./src/main.js')
+                .then(() => {
+                    console.log('Module system working, game loaded successfully');
+                    // Hide loading screen
+                    const loading = document.getElementById('loading');
+                    if (loading) {
+                        loading.style.display = 'none';
+                    }
+                })
+                .catch(error => {
+                    console.error('Module loading failed:', error);
+                    moduleLoadFailed = true;
+                    
+                    // Hide loading screen and show start button
+                    const loading = document.getElementById('loading');
+                    if (loading) {
+                        loading.style.display = 'none';
+                    }
+                    
+                    const startButton = document.getElementById('start-game-button');
+                    if (startButton) {
+                        startButton.style.display = 'block';
+                    }
+                });
+        } catch (error) {
+            console.error('Error in module script:', error);
+            moduleLoadFailed = true;
+        }
+    </script>
+</body>
+</html> 

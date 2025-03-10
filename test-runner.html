@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bacteria Game - Unit Tests</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        
+        .test-results {
+            border: 1px solid #ccc;
+            padding: 10px;
+            margin-top: 20px;
+            border-radius: 5px;
+        }
+        
+        .test-pass {
+            color: green;
+        }
+        
+        .test-fail {
+            color: red;
+        }
+        
+        ul {
+            list-style-type: none;
+            padding-left: 10px;
+        }
+        
+        h2 {
+            border-bottom: 1px solid #eee;
+            padding-bottom: 10px;
+        }
+    </style>
+</head>
+<body>
+    <h1>Bacteria Game - Unit Tests</h1>
+    
+    <button id="runTests">Run Tests</button>
+    
+    <div class="test-results">
+        <h2>Results <span id="testSummary"></span></h2>
+        <ul id="testResults"></ul>
+    </div>
+    
+    <!-- Invisible canvas for tests -->
+    <canvas id="gameCanvas" width="600" height="400" style="display:none"></canvas>
+    
+    <!-- Load game files -->
+    <script src="entities.js"></script>
+    <script src="renderer.js"></script>
+    <script src="input.js"></script>
+    <script src="game.js"></script>
+    <script src="tests.js"></script>
+    
+    <script>
+        document.getElementById('runTests').addEventListener('click', runTests);
+        
+        // Initialize canvas for tests
+        document.addEventListener('DOMContentLoaded', function() {
+            canvas = document.getElementById('gameCanvas');
+            if (canvas) {
+                const ctx = canvas.getContext('2d');
+                if (ctx) {
+                    initRenderer(ctx);
+                    console.log('Test environment initialized');
+                }
+            }
+        });
+    </script>
+</body>
+</html> 

@@ -1,0 +1,316 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bacteria Game - Simple Starter</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 20px;
+            background-color: #1a1a1a;
+            color: white;
+            font-family: Arial, sans-serif;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+        }
+
+        canvas {
+            background-color: #000;
+            border-radius: 10px;
+            margin-top: 20px;
+        }
+
+        button {
+            padding: 15px 30px;
+            font-size: 20px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 20px;
+        }
+
+        .instructions {
+            max-width: 600px;
+            text-align: center;
+            margin-bottom: 20px;
+        }
+    </style>
+</head>
+<body>
+    <h1>Bacteria Evolution Game</h1>
+    
+    <div class="instructions">
+        <p>If you're seeing this page, there might have been an issue with loading the main game.</p>
+        <p>Click the button below to start a simplified version of the game.</p>
+    </div>
+
+    <button id="startButton">Start Simple Game</button>
+    
+    <canvas id="gameCanvas" width="800" height="600" style="display: none;"></canvas>
+
+    <script>
+        document.getElementById('startButton').addEventListener('click', function() {
+            this.style.display = 'none';
+            const canvas = document.getElementById('gameCanvas');
+            canvas.style.display = 'block';
+            
+            // Simple game implementation that doesn't rely on modules
+            const ctx = canvas.getContext('2d');
+            
+            // Game state
+            const game = {
+                player: {
+                    x: canvas.width / 2,
+                    y: canvas.height / 2,
+                    size: 10,
+                    color: '#0070DD',
+                    speed: 2,
+                    dx: 0,
+                    dy: 0
+                },
+                nutrients: [],
+                enemies: [],
+                score: 0,
+                gameOver: false
+            };
+            
+            // Create initial nutrients
+            for (let i = 0; i < 20; i++) {
+                game.nutrients.push({
+                    x: Math.random() * canvas.width,
+                    y: Math.random() * canvas.height,
+                    size: 3 + Math.random() * 2,
+                    color: '#8BC34A'
+                });
+            }
+            
+            // Create initial enemies
+            for (let i = 0; i < 5; i++) {
+                game.enemies.push({
+                    x: Math.random() * canvas.width,
+                    y: Math.random() * canvas.height,
+                    size: 10 + Math.random() * 5,
+                    color: '#FFFFFF',
+                    speed: 1,
+                    dx: Math.random() * 2 - 1,
+                    dy: Math.random() * 2 - 1
+                });
+            }
+            
+            // Input handling
+            const keys = new Set();
+            
+            document.addEventListener('keydown', (e) => {
+                keys.add(e.key.toLowerCase());
+                
+                if (e.code === 'Space' && game.gameOver) {
+                    resetGame();
+                }
+            });
+            
+            document.addEventListener('keyup', (e) => {
+                keys.delete(e.key.toLowerCase());
+            });
+            
+            function updateInput() {
+                game.player.dx = 0;
+                game.player.dy = 0;
+                
+                if (keys.has('w') || keys.has('arrowup')) game.player.dy = -1;
+                if (keys.has('s') || keys.has('arrowdown')) game.player.dy = 1;
+                if (keys.has('a') || keys.has('arrowleft')) game.player.dx = -1;
+                if (keys.has('d') || keys.has('arrowright')) game.player.dx = 1;
+                
+                // Normalize diagonal movement
+                if (game.player.dx !== 0 && game.player.dy !== 0) {
+                    const magnitude = Math.sqrt(game.player.dx * game.player.dx + game.player.dy * game.player.dy);
+                    game.player.dx /= magnitude;
+                    game.player.dy /= magnitude;
+                }
+            }
+            
+            function update() {
+                if (game.gameOver) return;
+                
+                // Update player position
+                game.player.x += game.player.dx * game.player.speed;
+                game.player.y += game.player.dy * game.player.speed;
+                
+                // Keep player within bounds
+                game.player.x = Math.max(game.player.size, Math.min(canvas.width - game.player.size, game.player.x));
+                game.player.y = Math.max(game.player.size, Math.min(canvas.height - game.player.size, game.player.y));
+                
+                // Update enemies
+                game.enemies.forEach(enemy => {
+                    // Simple AI to chase player
+                    const dx = game.player.x - enemy.x;
+                    const dy = game.player.y - enemy.y;
+                    const dist = Math.sqrt(dx * dx + dy * dy);
+                    
+                    if (dist < 150) {
+                        enemy.dx = dx / dist;
+                        enemy.dy = dy / dist;
+                    }
+                    
+                    enemy.x += enemy.dx * enemy.speed;
+                    enemy.y += enemy.dy * enemy.speed;
+                    
+                    // Bounce off walls
+                    if (enemy.x < enemy.size || enemy.x > canvas.width - enemy.size) {
+                        enemy.dx *= -1;
+                    }
+                    if (enemy.y < enemy.size || enemy.y > canvas.height - enemy.size) {
+                        enemy.dy *= -1;
+                    }
+                    
+                    // Check collision with player
+                    const distance = Math.sqrt(
+                        Math.pow(game.player.x - enemy.x, 2) + 
+                        Math.pow(game.player.y - enemy.y, 2)
+                    );
+                    
+                    if (distance < game.player.size + enemy.size) {
+                        if (game.player.size > enemy.size) {
+                            // Player eats enemy
+                            game.player.size += enemy.size / 4;
+                            game.score += 100;
+                            enemy.x = Math.random() * canvas.width;
+                            enemy.y = Math.random() * canvas.height;
+                            enemy.size = 10 + Math.random() * 5;
+                        } else {
+                            // Enemy eats player
+                            game.gameOver = true;
+                        }
+                    }
+                });
+                
+                // Check nutrient collisions
+                game.nutrients.forEach(nutrient => {
+                    const distance = Math.sqrt(
+                        Math.pow(game.player.x - nutrient.x, 2) + 
+                        Math.pow(game.player.y - nutrient.y, 2)
+                    );
+                    
+                    if (distance < game.player.size + nutrient.size) {
+                        game.player.size += nutrient.size / 5;
+                        game.score += 10;
+                        nutrient.x = Math.random() * canvas.width;
+                        nutrient.y = Math.random() * canvas.height;
+                    }
+                });
+                
+                // Spawn new nutrients occasionally
+                if (Math.random() < 0.03) {
+                    game.nutrients.push({
+                        x: Math.random() * canvas.width,
+                        y: Math.random() * canvas.height,
+                        size: 3 + Math.random() * 2,
+                        color: '#8BC34A'
+                    });
+                }
+            }
+            
+            function render() {
+                // Clear canvas
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+                
+                // Draw nutrients
+                game.nutrients.forEach(nutrient => {
+                    ctx.fillStyle = nutrient.color;
+                    ctx.beginPath();
+                    ctx.arc(nutrient.x, nutrient.y, nutrient.size, 0, Math.PI * 2);
+                    ctx.fill();
+                });
+                
+                // Draw player
+                ctx.fillStyle = game.player.color;
+                ctx.beginPath();
+                ctx.arc(game.player.x, game.player.y, game.player.size, 0, Math.PI * 2);
+                ctx.fill();
+                
+                // Draw enemies
+                game.enemies.forEach(enemy => {
+                    ctx.fillStyle = enemy.color;
+                    ctx.beginPath();
+                    ctx.arc(enemy.x, enemy.y, enemy.size, 0, Math.PI * 2);
+                    ctx.fill();
+                });
+                
+                // Draw instructions
+                ctx.fillStyle = 'white';
+                ctx.font = '16px Arial';
+                ctx.textAlign = 'left';
+                ctx.fillText('WASD or Arrow Keys to move', 10, 20);
+                
+                // Draw score
+                ctx.fillStyle = 'white';
+                ctx.font = '20px Arial';
+                ctx.fillText(`Score: ${game.score}`, 10, 50);
+                
+                // Draw game over if needed
+                if (game.gameOver) {
+                    ctx.fillStyle = 'rgba(0, 0, 0, 0.7)';
+                    ctx.fillRect(0, 0, canvas.width, canvas.height);
+                    
+                    ctx.fillStyle = 'white';
+                    ctx.font = '40px Arial';
+                    ctx.textAlign = 'center';
+                    ctx.fillText('Game Over', canvas.width / 2, canvas.height / 2);
+                    ctx.font = '20px Arial';
+                    ctx.fillText(`Final Score: ${game.score}`, canvas.width / 2, canvas.height / 2 + 40);
+                    ctx.fillText('Press Space to Restart', canvas.width / 2, canvas.height / 2 + 80);
+                }
+            }
+            
+            function resetGame() {
+                game.player.x = canvas.width / 2;
+                game.player.y = canvas.height / 2;
+                game.player.size = 10;
+                game.score = 0;
+                game.gameOver = false;
+                
+                game.nutrients = [];
+                for (let i = 0; i < 20; i++) {
+                    game.nutrients.push({
+                        x: Math.random() * canvas.width,
+                        y: Math.random() * canvas.height,
+                        size: 3 + Math.random() * 2,
+                        color: '#8BC34A'
+                    });
+                }
+                
+                game.enemies = [];
+                for (let i = 0; i < 5; i++) {
+                    game.enemies.push({
+                        x: Math.random() * canvas.width,
+                        y: Math.random() * canvas.height,
+                        size: 10 + Math.random() * 5,
+                        color: '#FFFFFF',
+                        speed: 1,
+                        dx: Math.random() * 2 - 1,
+                        dy: Math.random() * 2 - 1
+                    });
+                }
+            }
+            
+            // Game loop
+            function gameLoop() {
+                updateInput();
+                update();
+                render();
+                requestAnimationFrame(gameLoop);
+            }
+            
+            // Start the game loop
+            gameLoop();
+        });
+    </script>
+</body>
+</html> 

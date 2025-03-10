@@ -1,0 +1,718 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Simple Bacteria Game</title>
+    <style>
+        body {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 20px;
+            font-family: Arial, sans-serif;
+            background-color: #f0f8ff;
+            overflow-x: hidden;
+        }
+        canvas {
+            border: 2px solid #333;
+            background-color: #ffe8e8;
+            margin: 10px 0;
+        }
+        .controls {
+            margin-bottom: 10px;
+        }
+        button {
+            padding: 10px 20px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+        }
+        .game-info {
+            margin-top: 10px;
+        }
+        .game-over {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background-color: rgba(255, 255, 255, 0.95);
+            padding: 20px;
+            border-radius: 10px;
+            text-align: center;
+            box-shadow: 0 0 20px rgba(0, 0, 0, 0.3);
+            display: none;
+            z-index: 100;
+        }
+    </style>
+</head>
+<body>
+    <h1>Simple Bacteria Game</h1>
+    <div class="controls">
+        <button id="startButton">Start Game</button>
+    </div>
+    <p>Use arrow keys or WASD to move</p>
+    <canvas id="gameCanvas" width="600" height="400"></canvas>
+    <div class="game-info">
+        <p>Size: <span id="size">10</span> | Children: <span id="children">0</span> | Nutrients: <span id="nutrients">0</span></p>
+    </div>
+    <div class="game-over" id="gameOver">
+        <h2>Game Over!</h2>
+        <p>Your bacteria reached a size of <span id="finalSize">0</span></p>
+        <button id="restartButton">Play Again</button>
+    </div>
+
+    <script>
+        // Game setup
+        const canvas = document.getElementById('gameCanvas') as HTMLCanvasElement;
+        const ctx = canvas.getContext('2d');
+        
+        // Check if canvas and context are valid
+        if (!canvas || !ctx) {
+            console.error("Canvas or context is not available.");
+            return;
+        }
+        
+        // Game variables
+        let bacteria = {
+            x: canvas.width / 2,
+            y: canvas.height / 2,
+            size: 10,
+            speed: 2
+        };
+        
+        let children: any[] = [];
+        let nutrients: any[] = [];
+        let enemies: any[] = [];
+        let score = 0;
+        let isGameRunning = false;
+        let direction = { x: 0, y: 0 };
+        
+        // Colors
+        const BACTERIA_COLOR = '#0070DD';
+        const NUTRIENT_COLOR = '#8BC34A';
+        const ENEMY_COLOR = '#FFFFFF';
+        
+        // Initialize game
+        function initGame() {
+            // Reset bacteria
+            bacteria = {
+                x: canvas.width / 2,
+                y: canvas.height / 2,
+                size: 10,
+                speed: 2
+            };
+            
+            // Reset game state
+            children = [];
+            nutrients = [];
+            enemies = [];
+            score = 0;
+            direction = { x: 0, y: 0 };
+            
+            // Spawn initial nutrients
+            for (let i = 0; i < 10; i++) {
+                spawnNutrient();
+            }
+            
+            // Spawn initial enemies
+            for (let i = 0; i < 3; i++) {
+                spawnEnemy();
+            }
+            
+            // Update UI
+            updateUI();
+            
+            // Hide game over screen
+            document.getElementById('gameOver')!.style.display = 'none';
+        }
+        
+        // Spawn a nutrient at a random position
+        function spawnNutrient() {
+            nutrients.push({
+                x: Math.random() * (canvas.width - 20) + 10,
+                y: Math.random() * (canvas.height - 20) + 10,
+                size: Math.random() * 2 + 3
+            });
+        }
+        
+        // Spawn an enemy (white blood cell)
+        function spawnEnemy() {
+            enemies.push({
+                x: Math.random() * (canvas.width - 40) + 20,
+                y: Math.random() * (canvas.height - 40) + 20,
+                size: Math.random() * 5 + 15,
+                dx: (Math.random() - 0.5) * 2,
+                dy: (Math.random() - 0.5) * 2,
+                speed: Math.random() * 0.5 + 1,
+                isChasing: false,
+                targetType: 'none',  // 'main' or 'child'
+                targetIndex: -1
+            });
+        }
+        
+        // Split bacteria when it gets big enough
+        function splitBacteria() {
+            // Create new child
+            const angle = Math.random() * Math.PI * 2;
+            const distance = bacteria.size + 5;
+            
+            const child = {
+                x: bacteria.x + Math.cos(angle) * distance,
+                y: bacteria.y + Math.sin(angle) * distance,
+                size: bacteria.size / 2,
+                speed: 1,
+                dx: Math.cos(angle),
+                dy: Math.sin(angle),
+                targetIndex: -1,
+                wanderTimer: 0
+            };
+            
+            children.push(child);
+            
+            // Reduce parent size
+            bacteria.size = bacteria.size * 0.7;
+            
+            // Update UI
+            updateUI();
+        }
+        
+        // Update game state
+        function update() {
+            if (!isGameRunning) return;
+            
+            // Move player bacteria
+            bacteria.x += direction.x * bacteria.speed;
+            bacteria.y += direction.y * bacteria.speed;
+            
+            // Keep bacteria within bounds
+            if (bacteria.x < bacteria.size) bacteria.x = bacteria.size;
+            if (bacteria.x > canvas.width - bacteria.size) bacteria.x = canvas.width - bacteria.size;
+            if (bacteria.y < bacteria.size) bacteria.y = bacteria.size;
+            if (bacteria.y > canvas.height - bacteria.size) bacteria.y = canvas.height - bacteria.size;
+            
+            // Check for game over (hitting boundary)
+            if (bacteria.x <= bacteria.size || bacteria.x >= canvas.width - bacteria.size ||
+                bacteria.y <= bacteria.size || bacteria.y >= canvas.height - bacteria.size) {
+                if (Math.random() < 0.001) { // Very small chance to trigger on boundary
+                    gameOver();
+                    return;
+                }
+            }
+            
+            // Update children bacteria
+            updateChildren();
+            
+            // Check collisions with nutrients
+            checkNutrientCollisions();
+            
+            // Check collisions with enemies
+            checkEnemyCollisions();
+            
+            // Move enemies
+            moveEnemies();
+            
+            // Spawn new nutrients occasionally
+            if (Math.random() < 0.02) {
+                spawnNutrient();
+            }
+            
+            // Spawn new enemies occasionally
+            if (Math.random() < 0.005) {
+                spawnEnemy();
+            }
+            
+            // Draw everything
+            draw();
+            
+            // Continue game loop
+            if (isGameRunning) {
+                requestAnimationFrame(update);
+            }
+        }
+        
+        // Update children behavior
+        function updateChildren() {
+            for (let i = children.length - 1; i >= 0; i--) {
+                const child = children[i];
+                
+                // Find closest nutrient if no target
+                if (child.targetIndex === -1 && nutrients.length > 0) {
+                    let closestDist = Infinity;
+                    let closestIndex = -1;
+                    
+                    for (let j = 0; j < nutrients.length; j++) {
+                        const nutrient = nutrients[j];
+                        const dx = nutrient.x - child.x;
+                        const dy = nutrient.y - child.y;
+                        const dist = Math.sqrt(dx * dx + dy * dy);
+                        
+                        if (dist < closestDist) {
+                            closestDist = dist;
+                            closestIndex = j;
+                        }
+                    }
+                    
+                    child.targetIndex = closestIndex;
+                } else if (child.targetIndex === -1) {
+                    // Wander if no targets
+                    if (child.wanderTimer <= 0) {
+                        const angle = Math.random() * Math.PI * 2;
+                        child.dx = Math.cos(angle);
+                        child.dy = Math.sin(angle);
+                        child.wanderTimer = 50 + Math.random() * 100;
+                    } else {
+                        child.wanderTimer--;
+                    }
+                } else if (child.targetIndex >= 0 && child.targetIndex < nutrients.length) {
+                    // Move toward target
+                    const target = nutrients[child.targetIndex];
+                    const dx = target.x - child.x;
+                    const dy = target.y - child.y;
+                    const dist = Math.sqrt(dx * dx + dy * dy);
+                    
+                    // If close enough, consume the nutrient
+                    if (dist < child.size + target.size) {
+                        child.size += 1;
+                        nutrients.splice(child.targetIndex, 1);
+                        child.targetIndex = -1;
+                        score++;
+                        updateUI();
+                        
+                        // Split if large enough
+                        if (child.size > 20 && children.length < 5 && Math.random() < 0.3) {
+                            const childIndex = children.indexOf(child);
+                            splitChildBacteria(childIndex);
+                        }
+                    } else {
+                        // Move toward nutrient
+                        child.dx = dx / dist;
+                        child.dy = dy / dist;
+                    }
+                } else {
+                    // Target no longer exists
+                    child.targetIndex = -1;
+                }
+                
+                // Avoid enemies
+                for (let j = 0; j < enemies.length; j++) {
+                    const enemy = enemies[j];
+                    const dx = child.x - enemy.x;
+                    const dy = child.y - enemy.y;
+                    const dist = Math.sqrt(dx * dx + dy * dy);
+                    
+                    if (dist < child.size + enemy.size + 30) {
+                        // Run away from enemy
+                        child.dx = dx / dist;
+                        child.dy = dy / dist;
+                        break;
+                    }
+                }
+                
+                // Move child
+                child.x += child.dx * child.speed;
+                child.y += child.dy * child.speed;
+                
+                // Bounce off walls
+                if (child.x < child.size) {
+                    child.x = child.size;
+                    child.dx *= -1;
+                }
+                if (child.x > canvas.width - child.size) {
+                    child.x = canvas.width - child.size;
+                    child.dx *= -1;
+                }
+                if (child.y < child.size) {
+                    child.y = child.size;
+                    child.dy *= -1;
+                }
+                if (child.y > canvas.height - child.size) {
+                    child.y = canvas.height - child.size;
+                    child.dy *= -1;
+                }
+                
+                // Check for collision with enemies
+                for (let j = 0; j < enemies.length; j++) {
+                    const enemy = enemies[j];
+                    const dx = child.x - enemy.x;
+                    const dy = child.y - enemy.y;
+                    const dist = Math.sqrt(dx * dx + dy * dy);
+                    
+                    if (dist < child.size + enemy.size) {
+                        if (enemy.size > child.size) {
+                            // Child is consumed by enemy
+                            children.splice(i, 1);
+                            updateUI();
+                            break;
+                        }
+                    }
+                }
+                
+                // Check for collision with nutrients
+                for (let j = nutrients.length - 1; j >= 0; j--) {
+                    const nutrient = nutrients[j];
+                    const dx = child.x - nutrient.x;
+                    const dy = child.y - nutrient.y;
+                    const dist = Math.sqrt(dx * dx + dy * dy);
+                    
+                    if (dist < child.size + nutrient.size) {
+                        // Consume nutrient
+                        child.size += 1;
+                        nutrients.splice(j, 1);
+                        child.targetIndex = -1;
+                        score++;
+                        updateUI();
+                    }
+                }
+            }
+        }
+        
+        // Split a child bacteria
+        function splitChildBacteria(index) {
+            const parent = children[index];
+            
+            // Create new child
+            const angle = Math.random() * Math.PI * 2;
+            const distance = parent.size + 5;
+            
+            const child = {
+                x: parent.x + Math.cos(angle) * distance,
+                y: parent.y + Math.sin(angle) * distance,
+                size: parent.size / 2,
+                speed: parent.speed,
+                dx: Math.cos(angle),
+                dy: Math.sin(angle),
+                targetIndex: -1,
+                wanderTimer: 0
+            };
+            
+            children.push(child);
+            
+            // Reduce parent size
+            parent.size = parent.size * 0.7;
+            
+            // Update UI
+            updateUI();
+        }
+        
+        // Check for collisions with nutrients
+        function checkNutrientCollisions() {
+            for (let i = nutrients.length - 1; i >= 0; i--) {
+                const nutrient = nutrients[i];
+                const dx = bacteria.x - nutrient.x;
+                const dy = bacteria.y - nutrient.y;
+                const dist = Math.sqrt(dx * dx + dy * dy);
+                
+                if (dist < bacteria.size + nutrient.size) {
+                    // Consume nutrient
+                    bacteria.size += 1;
+                    nutrients.splice(i, 1);
+                    score++;
+                    
+                    // Check if bacteria should split
+                    if (bacteria.size >= 20 && Math.random() < 0.4) {
+                        splitBacteria();
+                    }
+                    
+                    // Update UI
+                    updateUI();
+                }
+            }
+        }
+        
+        // Check for collisions with enemies
+        function checkEnemyCollisions() {
+            for (let i = 0; i < enemies.length; i++) {
+                const enemy = enemies[i];
+                const dx = bacteria.x - enemy.x;
+                const dy = bacteria.y - enemy.y;
+                const dist = Math.sqrt(dx * dx + dy * dy);
+                
+                if (dist < bacteria.size + enemy.size) {
+                    if (enemy.size > bacteria.size * 0.8) {
+                        // Game over if enemy is larger
+                        gameOver();
+                        return;
+                    }
+                }
+            }
+        }
+        
+        // Move enemies
+        function moveEnemies() {
+            for (let i = 0; i < enemies.length; i++) {
+                const enemy = enemies[i];
+                
+                // Occasionally change direction
+                if (Math.random() < 0.02) {
+                    enemy.dx = (Math.random() - 0.5) * 2;
+                    enemy.dy = (Math.random() - 0.5) * 2;
+                }
+                
+                // Find closest target (either main bacteria or children)
+                let closestDist = Infinity;
+                let closestTarget = null;
+                let targetType = 'none';
+                let targetIndex = -1;
+                
+                // Check distance to main bacteria
+                const dxMain = bacteria.x - enemy.x;
+                const dyMain = bacteria.y - enemy.y;
+                const distMain = Math.sqrt(dxMain * dxMain + dyMain * dyMain);
+                
+                if (distMain < closestDist) {
+                    closestDist = distMain;
+                    closestTarget = bacteria;
+                    targetType = 'main';
+                }
+                
+                // Check distance to each child
+                for (let j = 0; j < children.length; j++) {
+                    const child = children[j];
+                    const dxChild = child.x - enemy.x;
+                    const dyChild = child.y - enemy.y;
+                    const distChild = Math.sqrt(dxChild * dxChild + dyChild * dyChild);
+                    
+                    // Only chase if the enemy is bigger than the child or similar size
+                    if (distChild < closestDist && enemy.size >= child.size * 0.8) {
+                        closestDist = distChild;
+                        closestTarget = child;
+                        targetType = 'child';
+                        targetIndex = j;
+                    }
+                }
+                
+                // Chase the closest target if it's within range
+                if (closestTarget && closestDist < 150) {
+                    const dx = closestTarget.x - enemy.x;
+                    const dy = closestTarget.y - enemy.y;
+                    enemy.dx = dx / closestDist;
+                    enemy.dy = dy / closestDist;
+                    
+                    // Update enemy state
+                    enemy.isChasing = true;
+                    enemy.targetType = targetType;
+                    enemy.targetIndex = targetIndex;
+                    
+                    // Increase speed when chasing
+                    enemy.speed = Math.min(enemy.speed * 1.005, 2.5);
+                } else {
+                    // Reset state when not chasing
+                    enemy.isChasing = false;
+                    enemy.targetType = 'none';
+                    enemy.targetIndex = -1;
+                    
+                    // Reset speed when wandering
+                    enemy.speed = Math.max(enemy.speed * 0.99, 1);
+                }
+                
+                // Normalize speed
+                const magnitude = Math.sqrt(enemy.dx * enemy.dx + enemy.dy * enemy.dy);
+                if (magnitude > 0) {
+                    enemy.dx /= magnitude;
+                    enemy.dy /= magnitude;
+                }
+                
+                // Move enemy
+                enemy.x += enemy.dx * enemy.speed;
+                enemy.y += enemy.dy * enemy.speed;
+                
+                // Bounce off walls
+                if (enemy.x < enemy.size) {
+                    enemy.x = enemy.size;
+                    enemy.dx *= -1;
+                }
+                if (enemy.x > canvas.width - enemy.size) {
+                    enemy.x = canvas.width - enemy.size;
+                    enemy.dx *= -1;
+                }
+                if (enemy.y < enemy.size) {
+                    enemy.y = enemy.size;
+                    enemy.dy *= -1;
+                }
+                if (enemy.y > canvas.height - enemy.size) {
+                    enemy.y = canvas.height - enemy.size;
+                    enemy.dy *= -1;
+                }
+            }
+        }
+        
+        // Draw game
+        function draw() {
+            // Clear canvas
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            
+            // Draw nutrients
+            for (let i = 0; i < nutrients.length; i++) {
+                const nutrient = nutrients[i];
+                ctx.fillStyle = NUTRIENT_COLOR;
+                ctx.beginPath();
+                ctx.arc(nutrient.x, nutrient.y, nutrient.size, 0, Math.PI * 2);
+                ctx.fill();
+            }
+            
+            // Draw children
+            for (let i = 0; i < children.length; i++) {
+                const child = children[i];
+                
+                // Draw body
+                ctx.fillStyle = BACTERIA_COLOR;
+                ctx.beginPath();
+                ctx.arc(child.x, child.y, child.size, 0, Math.PI * 2);
+                ctx.fill();
+                
+                // Draw inner detail
+                ctx.fillStyle = '#005CB8';
+                ctx.beginPath();
+                ctx.arc(child.x, child.y, child.size * 0.7, 0, Math.PI * 2);
+                ctx.fill();
+            }
+            
+            // Draw enemies
+            for (let i = 0; i < enemies.length; i++) {
+                const enemy = enemies[i];
+                
+                // Draw chase aura if chasing
+                if (enemy.isChasing) {
+                    ctx.fillStyle = 'rgba(255, 150, 150, 0.3)';
+                    ctx.beginPath();
+                    ctx.arc(enemy.x, enemy.y, enemy.size + 10, 0, Math.PI * 2);
+                    ctx.fill();
+                }
+                
+                // Draw body
+                ctx.fillStyle = ENEMY_COLOR;
+                ctx.beginPath();
+                ctx.arc(enemy.x, enemy.y, enemy.size, 0, Math.PI * 2);
+                ctx.fill();
+                
+                // Draw inner detail
+                ctx.fillStyle = '#EEEEEE';
+                ctx.beginPath();
+                ctx.arc(enemy.x, enemy.y, enemy.size * 0.6, 0, Math.PI * 2);
+                ctx.fill();
+            }
+            
+            // Draw player bacteria
+            // Draw main body
+            ctx.fillStyle = BACTERIA_COLOR;
+            ctx.beginPath();
+            ctx.arc(bacteria.x, bacteria.y, bacteria.size, 0, Math.PI * 2);
+            ctx.fill();
+            
+            // Draw inner detail
+            ctx.fillStyle = '#005CB8';
+            ctx.beginPath();
+            ctx.arc(bacteria.x, bacteria.y, bacteria.size * 0.7, 0, Math.PI * 2);
+            ctx.fill();
+            
+            // Draw outline
+            ctx.strokeStyle = '#00AAFF';
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            ctx.arc(bacteria.x, bacteria.y, bacteria.size, 0, Math.PI * 2);
+            ctx.stroke();
+        }
+        
+        // Update UI elements
+        function updateUI() {
+            const sizeElement = document.getElementById('size');
+            const childrenElement = document.getElementById('children');
+            const nutrientsElement = document.getElementById('nutrients');
+            const finalSizeElement = document.getElementById('finalSize');
+            const gameOverElement = document.getElementById('gameOver');
+
+            if (sizeElement) sizeElement.textContent = Math.round(bacteria.size).toString();
+            if (childrenElement) childrenElement.textContent = children.length.toString();
+            if (nutrientsElement) nutrientsElement.textContent = score.toString();
+            if (finalSizeElement) finalSizeElement.textContent = Math.round(bacteria.size).toString();
+            if (gameOverElement) gameOverElement.style.display = 'block';
+        }
+        
+        // Game over
+        function gameOver() {
+            isGameRunning = false;
+            document.getElementById('finalSize')!.textContent = Math.round(bacteria.size).toString();
+            document.getElementById('gameOver')!.style.display = 'block';
+        }
+        
+        // Event listeners
+        document.addEventListener('keydown', function(event) {
+            // Prevent default behavior for arrow keys
+            if(['Space', 'ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(event.code)) {
+                event.preventDefault();
+            }
+            
+            // Only handle input if game is running
+            if (!isGameRunning) return;
+            
+            switch (event.key) {
+                case 'ArrowUp':
+                case 'w':
+                    direction.y = -1;
+                    break;
+                case 'ArrowDown':
+                case 's':
+                    direction.y = 1;
+                    break;
+                case 'ArrowLeft':
+                case 'a':
+                    direction.x = -1;
+                    break;
+                case 'ArrowRight':
+                case 'd':
+                    direction.x = 1;
+                    break;
+                case ' ':
+                    // Space can restart the game
+                    if (!isGameRunning) {
+                        startGame();
+                    }
+                    break;
+            }
+        });
+        
+        document.addEventListener('keyup', function(event) {
+            // Only handle input if game is running
+            if (!isGameRunning) return;
+            
+            switch (event.key) {
+                case 'ArrowUp':
+                case 'w':
+                case 'ArrowDown':
+                case 's':
+                    direction.y = 0;
+                    break;
+                case 'ArrowLeft':
+                case 'a':
+                case 'ArrowRight':
+                case 'd':
+                    direction.x = 0;
+                    break;
+            }
+        });
+        
+        // Start game function
+        function startGame() {
+            initGame();
+            isGameRunning = true;
+            requestAnimationFrame(update);
+        }
+        
+        // Button event listeners
+        document.getElementById('startButton')?.addEventListener('click', function() {
+            startGame();
+        });
+        
+        document.getElementById('restartButton')?.addEventListener('click', function() {
+            startGame();
+        });
+        
+        // Initialize game on load
+        initGame();
+    </script>
+</body>
+</html>
