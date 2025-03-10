@@ -1,0 +1,234 @@
+@keyframes float {
+    0% {
+        transform: translate(120vw, -50%);
+    }
+    100% {
+        transform: translate(-20vw, -50%);
+    }
+}
+
+@keyframes float-reverse {
+    0% {
+        transform: translate(-20vw, -50%);
+    }
+    100% {
+        transform: translate(120vw, -50%);
+    }
+}
+
+.blood-cell {
+    position: absolute;
+    width: 50px;
+    height: 50px;
+    background-color: #cc2222;
+    border-radius: 50%;
+    opacity: 0.3;
+    pointer-events: none;
+}
+
+.blood-cell::before {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 60%;
+    height: 60%;
+    background-color: #aa1111;
+    border-radius: 50%;
+}
+
+body {
+    margin: 0;
+    padding: 15px;
+    background: linear-gradient(45deg, #330000, #660000);
+    color: white;
+    font-family: Arial, sans-serif;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: flex-start;
+    height: 100vh;
+    position: relative;
+}
+
+canvas {
+    background-color: rgba(0, 0, 0, 0.7);
+    border-radius: 10px;
+    margin-top: 20px;
+    position: relative;
+    z-index: 2;
+    border: 2px solid #660000;
+    box-shadow: 0 0 20px rgba(255, 0, 0, 0.3);
+}
+
+h1 {
+    font-size: 28px;
+    margin-bottom: 20px;
+}
+
+.bacteria-selection {
+    display: flex;
+    gap: 15px;
+    margin-bottom: 20px;
+}
+
+.bacteria-card {
+    width: 200px;
+    height: 250px;
+    padding: 15px;
+}
+
+.bacteria-card:hover {
+    background-color: rgba(255, 255, 255, 0.1);
+    transform: translateY(-5px);
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+}
+
+.bacteria-card:hover .bacteria-image img {
+    transform: scale(1.1);
+}
+
+.bacteria-image {
+    width: 120px;
+    height: 120px;
+    margin: 0 auto 15px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    overflow: hidden;
+    border-radius: 10px;
+}
+
+.bacteria-image img {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    transition: transform 0.3s ease;
+}
+
+.bacteria-name {
+    font-size: 24px;
+    margin-bottom: 10px;
+    font-weight: bold;
+    color: #ffffff;
+}
+
+.bacteria-description {
+    font-size: 14px;
+    margin-bottom: 15px;
+    color: #cccccc;
+    line-height: 1.4;
+}
+
+.bacteria-stats {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+    padding: 15px;
+    background-color: rgba(255, 255, 255, 0.1);
+    border-radius: 5px;
+}
+
+.bacteria-stats div {
+    font-size: 14px;
+    color: #ffffff;
+}
+
+.how-to-play {
+    max-width: 800px;
+    text-align: left;
+    margin-top: 10px;
+    background-color: rgba(0, 0, 0, 0.7);
+    padding: 15px;
+    border-radius: 10px;
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+    max-height: calc(100vh - 500px);
+    overflow-y: auto;
+}
+
+.how-to-play h2 {
+    margin-bottom: 10px;
+    color: #ffffff;
+    font-size: 20px;
+}
+
+.game-elements {
+    padding: 10px;
+}
+
+.element-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 10px;
+    margin: 10px 0;
+}
+
+.element {
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 8px;
+    padding: 10px;
+    text-align: center;
+    transition: transform 0.2s;
+}
+
+.element:hover {
+    transform: translateY(-5px);
+}
+
+.element img {
+    width: 60px;
+    height: 60px;
+    object-fit: contain;
+    margin-bottom: 5px;
+}
+
+.element p {
+    margin: 0;
+    font-size: 0.8em;
+    line-height: 1.2;
+}
+
+section h3 {
+    color: #fff;
+    margin-top: 15px;
+    margin-bottom: 5px;
+    font-size: 16px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+    padding-bottom: 5px;
+}
+
+.citation {
+    text-align: center;
+    margin-top: 15px;
+    padding: 10px;
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+    font-size: 0.8em;
+}
+
+.citation a {
+    color: #4a9eff;
+    text-decoration: none;
+}
+
+.citation a:hover {
+    text-decoration: underline;
+}
+
+@media (max-width: 768px) {
+    .element-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+    
+    .bacteria-selection {
+        flex-direction: column;
+        align-items: center;
+    }
+    
+    .bacteria-card {
+        width: 100%;
+        max-width: 250px;
+    }
+} 

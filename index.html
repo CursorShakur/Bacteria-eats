@@ -4,362 +4,100 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Bacteria Evolution Game</title>
-    <style>
-        body {
-            margin: 0;
-            padding: 20px;
-            background-color: #1a1a1a;
-            color: white;
-            font-family: Arial, sans-serif;
-            overflow: hidden;
-        }
-
-        canvas {
-            background-color: #000;
-            border-radius: 10px;
-        }
-
-        .controls {
-            position: absolute;
-            top: 10px;
-            right: 10px;
-            background-color: rgba(0, 0, 0, 0.7);
-            padding: 10px;
-            border-radius: 5px;
-        }
-
-        .bacteria-option:hover {
-            background-color: rgba(255, 255, 255, 0.1);
-        }
-
-        #tutorial {
-            position: absolute;
-            bottom: 10px;
-            left: 10px;
-            background-color: rgba(0, 0, 0, 0.7);
-            padding: 10px;
-            border-radius: 5px;
-            max-width: 300px;
-        }
-        
-        #loading {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background-color: rgba(0, 0, 0, 0.8);
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
-            z-index: 2000;
-        }
-        
-        .spinner {
-            border: 5px solid #333;
-            border-top: 5px solid #4CAF50;
-            border-radius: 50%;
-            width: 50px;
-            height: 50px;
-            animation: spin 1s linear infinite;
-            margin-bottom: 20px;
-        }
-        
-        @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
-        }
-
-        #start-game-button {
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            padding: 15px 30px;
-            font-size: 20px;
-            background-color: #4CAF50;
-            color: white;
-            border: none;
-            border-radius: 5px;
-            cursor: pointer;
-            z-index: 1000;
-        }
-        
-        #debug-toggle {
-            position: absolute;
-            top: 10px;
-            left: 10px;
-            padding: 5px 10px;
-            background-color: #FF5722;
-            color: white;
-            border: none;
-            border-radius: 5px;
-            cursor: pointer;
-            z-index: 1000;
-        }
-        
-        #debug-panel {
-            position: absolute;
-            top: 50px;
-            left: 10px;
-            background-color: rgba(0, 0, 0, 0.8);
-            padding: 10px;
-            border-radius: 5px;
-            max-width: 300px;
-            font-family: monospace;
-            font-size: 12px;
-            z-index: 999;
-            display: none;
-        }
-        
-        #error-panel {
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            background-color: rgba(255, 0, 0, 0.8);
-            padding: 20px;
-            border-radius: 10px;
-            max-width: 80%;
-            font-family: monospace;
-            font-size: 14px;
-            z-index: 2001;
-            display: none;
-            text-align: center;
-        }
-        
-        #error-panel h2 {
-            color: white;
-            margin-top: 0;
-        }
-        
-        #error-panel pre {
-            text-align: left;
-            background-color: rgba(0, 0, 0, 0.5);
-            padding: 10px;
-            border-radius: 5px;
-            overflow: auto;
-            max-height: 200px;
-        }
-        
-        #error-panel button {
-            margin-top: 15px;
-            padding: 8px 15px;
-            background-color: white;
-            color: #FF5722;
-            border: none;
-            border-radius: 5px;
-            cursor: pointer;
-            font-weight: bold;
-        }
-    </style>
+    <link rel="stylesheet" href="css/styles.css">
 </head>
 <body>
-    <!-- Loading screen -->
-    <div id="loading">
-        <div class="spinner"></div>
-        <h2>Loading Game...</h2>
-        <p>If the game doesn't load within a few seconds, please check your browser console for errors.</p>
-    </div>
-
-    <!-- Start button -->
-    <button id="start-game-button">Start Game</button>
-
-    <!-- Debug toggle -->
-    <button id="debug-toggle">Debug Mode</button>
-    <div id="debug-panel">
-        <h3>Debug Information</h3>
-        <div id="debug-content"></div>
+    <h1>Choose Your Bacteria Type</h1>
+    
+    <div class="bacteria-selection">
+        <div class="bacteria-card" id="coccus">
+            <div class="bacteria-name">Coccus</div>
+            <div class="bacteria-description">Round bacteria with balanced stats</div>
+            <div class="bacteria-stats">
+                <div>Speed: 2</div>
+                <div>Size: 10</div>
+                <div>Growth: 1</div>
+            </div>
+        </div>
+        
+        <div class="bacteria-card" id="bacillus">
+            <div class="bacteria-name">Bacillus</div>
+            <div class="bacteria-description">Rod-shaped bacteria with high speed</div>
+            <div class="bacteria-stats">
+                <div>Speed: 3</div>
+                <div>Size: 12</div>
+                <div>Growth: 0.8</div>
+            </div>
+        </div>
+        
+        <div class="bacteria-card" id="spirillum">
+            <div class="bacteria-name">Spirillum</div>
+            <div class="bacteria-description">Spiral bacteria with high evasion</div>
+            <div class="bacteria-stats">
+                <div>Speed: 2.5</div>
+                <div>Size: 8</div>
+                <div>Growth: 0.9</div>
+            </div>
+        </div>
     </div>
     
-    <!-- Error panel -->
-    <div id="error-panel">
-        <h2>Error Loading Game</h2>
-        <div id="error-message"></div>
-        <pre id="error-stack"></pre>
-        <button id="error-retry">Retry</button>
-    </div>
+    <div class="how-to-play">
+        <h2>How to Play:</h2>
+        <div class="game-elements">
+            <section class="nutrients">
+                <h3>Nutrients to Consume:</h3>
+                <div class="element-grid">
+                    <div class="element">
+                        <img src="assets/13 - Carbohydrates.png" alt="Carbohydrates">
+                        <p>Carbohydrates - Quick energy boost</p>
+                    </div>
+                    <div class="element">
+                        <img src="assets/15 - Proteins.png" alt="Proteins">
+                        <p>Proteins - Enhanced growth</p>
+                    </div>
+                    <div class="element">
+                        <img src="assets/14 - Lipids.png" alt="Lipids">
+                        <p>Lipids - Maximum growth (requires enzyme)</p>
+                    </div>
+                </div>
+            </section>
 
-    <canvas id="gameCanvas"></canvas>
+            <section class="immune-cells">
+                <h3>Watch Out For:</h3>
+                <div class="element-grid">
+                    <div class="element">
+                        <img src="assets/1 - Neutrophils.png" alt="Neutrophils">
+                        <p>Neutrophils - Fast but short-lived immune cells</p>
+                    </div>
+                    <div class="element">
+                        <img src="assets/4 - Macrophages.png" alt="Macrophages">
+                        <p>Macrophages - Can consume multiple bacteria</p>
+                    </div>
+                    <div class="element">
+                        <img src="assets/7 - Antibodies.png" alt="Antibodies">
+                        <p>Antibodies - Mark bacteria for immune cell targeting</p>
+                    </div>
+                </div>
+            </section>
+
+            <section class="strategy">
+                <h3>Strategy Tips:</h3>
+                <div class="element-grid">
+                    <div class="element">
+                        <img src="assets/17 - Coccus biofilm.png" alt="Bacterial Colony">
+                        <p>Form colonies with other bacteria for protection and resource sharing</p>
+                    </div>
+                </div>
+            </section>
+        </div>
+
+        <div class="citation">
+            <p>Images created using BioRender - <a href="https://biorender.com" target="_blank" rel="noopener">https://biorender.com</a></p>
+        </div>
+    </div>
     
-    <div class="controls">
-        <div>WASD or Arrow Keys to move</div>
-        <div>Space to restart when game over</div>
-    </div>
+    <canvas id="gameCanvas" width="800" height="600" style="display: none;"></canvas>
 
-    <div id="tutorial">
-        <h3>How to Play:</h3>
-        <ul>
-            <li>Consume nutrients to grow:
-                <ul>
-                    <li>Green: Carbohydrates - Quick energy</li>
-                    <li>Orange: Proteins - Better growth</li>
-                    <li>Yellow: Lipids - Best growth (requires enzyme)</li>
-                </ul>
-            </li>
-            <li>Watch out for immune cells:
-                <ul>
-                    <li>White: Neutrophils - Fast but short-lived</li>
-                    <li>Gray: Macrophages - Can eat multiple bacteria</li>
-                    <li>Light Blue: Antibodies - Tag you for other cells</li>
-                </ul>
-            </li>
-            <li>Form colonies with other bacteria for protection and resource sharing</li>
-        </ul>
-    </div>
-
-    <script>
-        // Set up error handling
-        window.onerror = function(message, source, lineno, colno, error) {
-            console.error('Global error caught:', message, error);
-            showErrorPanel(message, error?.stack || 'No stack trace available');
-            return true; // Prevent default error handling
-        };
-        
-        // Show error panel
-        function showErrorPanel(message, stack) {
-            const errorPanel = document.getElementById('error-panel');
-            const errorMessage = document.getElementById('error-message');
-            const errorStack = document.getElementById('error-stack');
-            const loading = document.getElementById('loading');
-            
-            if (loading) loading.style.display = 'none';
-            
-            if (errorPanel && errorMessage && errorStack) {
-                errorMessage.textContent = message;
-                errorStack.textContent = stack;
-                errorPanel.style.display = 'block';
-            }
-        }
-        
-        // Set up retry button
-        const retryButton = document.getElementById('error-retry');
-        if (retryButton) {
-            retryButton.addEventListener('click', function() {
-                window.location.reload();
-            });
-        }
-        
-        // Check if modules are supported
-        function isModuleSupported() {
-            try {
-                new Function('import("")');
-                return true;
-            } catch (err) {
-                return false;
-            }
-        }
-        
-        // Load fallback if modules are not supported
-        if (!isModuleSupported()) {
-            console.log('ES modules not supported, loading fallback');
-            const fallbackScript = document.createElement('script');
-            fallbackScript.src = './src/fallback.js';
-            document.body.appendChild(fallbackScript);
-        }
-    </script>
-
-    <script type="module">
-        // Hide loading screen
-        window.addEventListener('DOMContentLoaded', () => {
-            try {
-                const loading = document.getElementById('loading');
-                if (loading) {
-                    loading.style.display = 'none';
-                }
-                
-                // Set up debug toggle
-                const debugToggle = document.getElementById('debug-toggle');
-                const debugPanel = document.getElementById('debug-panel');
-                const debugContent = document.getElementById('debug-content');
-                
-                // Global debug flag
-                window.DEBUG_MODE = false;
-                
-                if (debugToggle && debugPanel) {
-                    debugToggle.addEventListener('click', () => {
-                        window.DEBUG_MODE = !window.DEBUG_MODE;
-                        debugPanel.style.display = window.DEBUG_MODE ? 'block' : 'none';
-                        debugToggle.textContent = window.DEBUG_MODE ? 'Hide Debug' : 'Debug Mode';
-                        
-                        // Log debug status
-                        console.log(`Debug mode ${window.DEBUG_MODE ? 'enabled' : 'disabled'}`);
-                    });
-                    
-                    // Update debug panel
-                    setInterval(() => {
-                        if (window.DEBUG_MODE && debugContent) {
-                            const gameInfo = window.GAME_INFO || { status: 'Game not started' };
-                            debugContent.innerHTML = `
-                                <div>Time: ${new Date().toLocaleTimeString()}</div>
-                                <div>Game Status: ${gameInfo.status || 'Unknown'}</div>
-                                <div>FPS: ${gameInfo.fps || 'N/A'}</div>
-                                <div>Player: ${gameInfo.player || 'None'}</div>
-                                <div>Entities: ${gameInfo.entities || 'N/A'}</div>
-                                <div>Canvas: ${gameInfo.canvas || 'N/A'}</div>
-                            `;
-                        }
-                    }, 500);
-                }
-                
-                // Set up start button
-                const startButton = document.getElementById('start-game-button');
-                if (startButton) {
-                    startButton.addEventListener('click', () => {
-                        startButton.style.display = 'none';
-                        
-                        // Show loading screen while importing
-                        if (loading) loading.style.display = 'flex';
-                        
-                        // First test if modules work at all
-                        import('./src/test.js')
-                            .then(testModule => {
-                                console.log('Test module loaded successfully');
-                                
-                                // Now try to load the game
-                                import('./src/gameStarter.js')
-                                    .then(module => {
-                                        console.log('Game starter loaded');
-                                        if (loading) loading.style.display = 'none';
-                                        module.startGame();
-                                    })
-                                    .catch(error => {
-                                        console.error('Error loading game starter:', error);
-                                        if (loading) loading.style.display = 'none';
-                                        showErrorPanel(
-                                            'Failed to load the game module', 
-                                            error.stack || error.message || 'Unknown error'
-                                        );
-                                    });
-                            })
-                            .catch(error => {
-                                console.error('Error loading test module:', error);
-                                if (loading) loading.style.display = 'none';
-                                showErrorPanel(
-                                    'ES Modules not working', 
-                                    'Your browser may not support ES modules or there may be a server configuration issue.\n\n' + 
-                                    (error.stack || error.message || 'Unknown error')
-                                );
-                            });
-                    });
-                }
-            } catch (error) {
-                console.error('Error in initialization:', error);
-                showErrorPanel(
-                    'Error initializing the game', 
-                    error.stack || error.message || 'Unknown error'
-                );
-            }
-        });
-    </script>
-    
-    <!-- Fallback for browsers that don't support type="module" -->
-    <script nomodule>
-        console.log('Module script not supported, loading fallback');
-        const fallbackScript = document.createElement('script');
-        fallbackScript.src = './src/fallback.js';
-        document.body.appendChild(fallbackScript);
-    </script>
+    <script type="module" src="js/main.js"></script>
 </body>
 </html> 
