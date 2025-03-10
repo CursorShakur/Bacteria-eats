@@ -43,74 +43,102 @@ export class ImmuneCell extends Entity {
 
     // Render immune cell
     render(ctx) {
-        ctx.save();
-        ctx.fillStyle = this.color;
-
-        // Base shape
-        ctx.beginPath();
-        ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
-        ctx.fill();
-
-        // Type-specific details
-        switch(this.type.type) {
-            case 'NEUTROPHIL':
-                // Draw granules
-                ctx.fillStyle = 'rgba(255, 255, 255, 0.5)';
-                for(let i = 0; i < 5; i++) {
-                    const angle = (i * 2 * Math.PI) / 5;
-                    const x = this.x + Math.cos(angle) * this.size * 0.5;
-                    const y = this.y + Math.sin(angle) * this.size * 0.5;
+        if (!ctx) {
+            console.error('No context provided to ImmuneCell.render');
+            return;
+        }
+        
+        try {
+            ctx.save();
+            
+            // Use a brighter color for better visibility
+            ctx.fillStyle = this.color;
+            ctx.strokeStyle = '#FF0000'; // Red outline for immune cells
+            ctx.lineWidth = 2;
+            
+            // Draw base shape with larger size
+            const displaySize = this.size * 2; // Make immune cells 2x larger for visibility
+            
+            // Draw different shapes based on cell type
+            switch (this.type.type) {
+                case 'NEUTROPHIL':
+                    // Circle with cross
                     ctx.beginPath();
-                    ctx.arc(x, y, this.size * 0.2, 0, Math.PI * 2);
+                    ctx.arc(this.x, this.y, displaySize, 0, Math.PI * 2);
                     ctx.fill();
-                }
-                break;
-
-            case 'MACROPHAGE':
-                // Draw pseudopods
-                ctx.strokeStyle = this.color;
-                ctx.lineWidth = 2;
-                for(let i = 0; i < 8; i++) {
-                    const angle = (i * 2 * Math.PI) / 8;
-                    const length = this.size * (0.8 + Math.sin(Date.now() / 500 + i) * 0.2);
-                    ctx.beginPath();
-                    ctx.moveTo(this.x, this.y);
-                    ctx.lineTo(
-                        this.x + Math.cos(angle) * length,
-                        this.y + Math.sin(angle) * length
-                    );
                     ctx.stroke();
-                }
-                break;
-
-            case 'ANTIBODY':
-                // Draw Y-shaped antibody
-                ctx.strokeStyle = this.color;
-                ctx.lineWidth = 2;
-                // Stem
+                    
+                    // Draw cross
+                    ctx.beginPath();
+                    ctx.moveTo(this.x - displaySize * 0.7, this.y);
+                    ctx.lineTo(this.x + displaySize * 0.7, this.y);
+                    ctx.moveTo(this.x, this.y - displaySize * 0.7);
+                    ctx.lineTo(this.x, this.y + displaySize * 0.7);
+                    ctx.strokeStyle = '#FFFFFF';
+                    ctx.stroke();
+                    break;
+                    
+                case 'MACROPHAGE':
+                    // Larger circle with dots
+                    ctx.beginPath();
+                    ctx.arc(this.x, this.y, displaySize, 0, Math.PI * 2);
+                    ctx.fill();
+                    ctx.stroke();
+                    
+                    // Draw dots
+                    ctx.fillStyle = '#FFFFFF';
+                    for (let i = 0; i < 5; i++) {
+                        const angle = (i * 2 * Math.PI) / 5;
+                        const dotX = this.x + Math.cos(angle) * displaySize * 0.5;
+                        const dotY = this.y + Math.sin(angle) * displaySize * 0.5;
+                        ctx.beginPath();
+                        ctx.arc(dotX, dotY, displaySize * 0.2, 0, Math.PI * 2);
+                        ctx.fill();
+                    }
+                    break;
+                    
+                case 'ANTIBODY':
+                    // Y-shaped
+                    ctx.beginPath();
+                    ctx.arc(this.x, this.y, displaySize, 0, Math.PI * 2);
+                    ctx.fill();
+                    ctx.stroke();
+                    
+                    // Draw Y shape
+                    ctx.beginPath();
+                    ctx.moveTo(this.x, this.y - displaySize * 0.5);
+                    ctx.lineTo(this.x, this.y);
+                    ctx.lineTo(this.x - displaySize * 0.5, this.y + displaySize * 0.5);
+                    ctx.moveTo(this.x, this.y);
+                    ctx.lineTo(this.x + displaySize * 0.5, this.y + displaySize * 0.5);
+                    ctx.strokeStyle = '#FFFFFF';
+                    ctx.stroke();
+                    break;
+                    
+                default:
+                    // Default circle
+                    ctx.beginPath();
+                    ctx.arc(this.x, this.y, displaySize, 0, Math.PI * 2);
+                    ctx.fill();
+                    ctx.stroke();
+            }
+            
+            // Draw direction indicator if moving
+            if (this.velocity.x !== 0 || this.velocity.y !== 0) {
                 ctx.beginPath();
-                ctx.moveTo(this.x, this.y + this.size);
-                ctx.lineTo(this.x, this.y - this.size * 0.2);
-                // Arms
-                ctx.moveTo(this.x - this.size * 0.6, this.y - this.size * 0.6);
-                ctx.lineTo(this.x, this.y - this.size * 0.2);
-                ctx.lineTo(this.x + this.size * 0.6, this.y - this.size * 0.6);
-                ctx.stroke();
-                break;
-        }
-
-        // Draw targeting lines
-        if (this.targets.size > 0) {
-            ctx.strokeStyle = 'rgba(255, 0, 0, 0.3)';
-            ctx.beginPath();
-            this.targets.forEach(target => {
                 ctx.moveTo(this.x, this.y);
-                ctx.lineTo(target.x, target.y);
-            });
-            ctx.stroke();
+                ctx.lineTo(
+                    this.x + this.velocity.x * displaySize * 1.5,
+                    this.y + this.velocity.y * displaySize * 1.5
+                );
+                ctx.strokeStyle = '#FF0000'; // Red direction line
+                ctx.stroke();
+            }
+            
+            ctx.restore();
+        } catch (error) {
+            console.error('Error in ImmuneCell.render:', error);
         }
-
-        ctx.restore();
     }
 
     // Neutrophil behavior - fast and aggressive

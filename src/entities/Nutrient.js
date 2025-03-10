@@ -12,64 +12,43 @@ export class Nutrient extends Entity {
 
     // Render nutrient
     render(ctx) {
-        ctx.save();
-        ctx.fillStyle = this.color;
-        
-        // Draw base shape
-        ctx.beginPath();
-        ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
-        ctx.fill();
-
-        // Draw type indicator
-        ctx.strokeStyle = 'rgba(255, 255, 255, 0.5)';
-        ctx.lineWidth = 1;
-        
-        switch(this.type.type) {
-            case 'CARBOHYDRATE':
-                // Simple circle for carbs
-                ctx.beginPath();
-                ctx.arc(this.x, this.y, this.size * 0.5, 0, Math.PI * 2);
-                ctx.stroke();
-                break;
-                
-            case 'PROTEIN':
-                // Star shape for proteins
-                ctx.beginPath();
-                for(let i = 0; i < 5; i++) {
-                    const angle = (i * 4 * Math.PI) / 5;
-                    const x = this.x + Math.cos(angle) * this.size * 0.5;
-                    const y = this.y + Math.sin(angle) * this.size * 0.5;
-                    if(i === 0) ctx.moveTo(x, y);
-                    else ctx.lineTo(x, y);
-                }
-                ctx.closePath();
-                ctx.stroke();
-                break;
-                
-            case 'LIPID':
-                // Hexagon for lipids
-                ctx.beginPath();
-                for(let i = 0; i < 6; i++) {
-                    const angle = (i * 2 * Math.PI) / 6;
-                    const x = this.x + Math.cos(angle) * this.size * 0.7;
-                    const y = this.y + Math.sin(angle) * this.size * 0.7;
-                    if(i === 0) ctx.moveTo(x, y);
-                    else ctx.lineTo(x, y);
-                }
-                ctx.closePath();
-                ctx.stroke();
-                
-                // Add enzyme indicator
-                if(this.requiresEnzyme) {
-                    ctx.strokeStyle = 'rgba(255, 0, 0, 0.5)';
-                    ctx.beginPath();
-                    ctx.arc(this.x, this.y, this.size * 0.3, 0, Math.PI * 2);
-                    ctx.stroke();
-                }
-                break;
+        if (!ctx) {
+            console.error('No context provided to Nutrient.render');
+            return;
         }
         
-        ctx.restore();
+        try {
+            ctx.save();
+            
+            // Use a brighter color for better visibility
+            ctx.fillStyle = this.color;
+            ctx.strokeStyle = '#FFFFFF'; // White outline
+            ctx.lineWidth = 1;
+            
+            // Draw base shape with larger size
+            const displaySize = this.size * 3; // Make nutrients 3x larger for visibility
+            
+            ctx.beginPath();
+            ctx.arc(this.x, this.y, displaySize, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.stroke();
+            
+            // Add a type indicator
+            ctx.fillStyle = '#FFFFFF';
+            ctx.font = '10px Arial';
+            
+            let label = 'C'; // Default for carbohydrate
+            if (this.type.type === 'PROTEIN') label = 'P';
+            if (this.type.type === 'LIPID') label = 'L';
+            
+            // Center the text
+            const textWidth = ctx.measureText(label).width;
+            ctx.fillText(label, this.x - textWidth/2, this.y + 3);
+            
+            ctx.restore();
+        } catch (error) {
+            console.error('Error in Nutrient.render:', error);
+        }
     }
 
     // Static method to spawn a random nutrient

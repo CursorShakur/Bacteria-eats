@@ -39,55 +39,42 @@ export class Bacteria extends Entity {
 
     // Render bacteria based on its type
     render(ctx) {
-        ctx.save();
-        ctx.fillStyle = this.isTagged ? '#FF6B6B' : this.color;
-
-        switch (this.type.shape) {
-            case 'rectangle':
-                // Bacilli (rod shape)
-                ctx.translate(this.x, this.y);
-                ctx.rotate(Math.atan2(this.velocity.y, this.velocity.x));
-                ctx.fillRect(-this.size, -this.size/2, this.size * 2, this.size);
-                break;
-
-            case 'spiral':
-                // Spirilla (spiral shape)
-                ctx.beginPath();
-                ctx.translate(this.x, this.y);
-                ctx.rotate(Math.atan2(this.velocity.y, this.velocity.x));
-                
-                // Draw spiral shape
-                for (let i = 0; i < Math.PI * 2; i += 0.1) {
-                    const x = i * this.size/2 * Math.cos(i * 2);
-                    const y = this.size/2 * Math.sin(i * 2);
-                    if (i === 0) ctx.moveTo(x, y);
-                    else ctx.lineTo(x, y);
-                }
-                ctx.stroke();
-                ctx.fill();
-                break;
-
-            default:
-                // Cocci (circle shape)
-                ctx.beginPath();
-                ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
-                ctx.fill();
+        if (!ctx) {
+            console.error('No context provided to Bacteria.render');
+            return;
         }
-
-        // Draw colony connection if part of a colony
-        if (this.colony) {
-            ctx.strokeStyle = 'rgba(255, 255, 255, 0.3)';
+        
+        try {
+            ctx.save();
+            
+            // Use a brighter color for better visibility
+            const baseColor = this.isTagged ? '#FF6B6B' : this.color;
+            ctx.fillStyle = baseColor;
+            ctx.strokeStyle = '#FFFFFF'; // White outline
+            ctx.lineWidth = 2;
+            
+            // Draw a simple circle for all bacteria types for now
             ctx.beginPath();
-            this.colony.members.forEach(member => {
-                if (member !== this) {
-                    ctx.moveTo(this.x, this.y);
-                    ctx.lineTo(member.x, member.y);
-                }
-            });
+            ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+            ctx.fill();
             ctx.stroke();
+            
+            // Draw direction indicator
+            if (this.velocity.x !== 0 || this.velocity.y !== 0) {
+                ctx.beginPath();
+                ctx.moveTo(this.x, this.y);
+                ctx.lineTo(
+                    this.x + this.velocity.x * this.size * 1.5,
+                    this.y + this.velocity.y * this.size * 1.5
+                );
+                ctx.strokeStyle = '#FFFF00'; // Yellow direction line
+                ctx.stroke();
+            }
+            
+            ctx.restore();
+        } catch (error) {
+            console.error('Error in Bacteria.render:', error);
         }
-
-        ctx.restore();
     }
 
     // Consume nutrient

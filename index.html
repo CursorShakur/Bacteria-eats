@@ -84,7 +84,74 @@
             border-radius: 5px;
             cursor: pointer;
             z-index: 1000;
+        }
+        
+        #debug-toggle {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            padding: 5px 10px;
+            background-color: #FF5722;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            z-index: 1000;
+        }
+        
+        #debug-panel {
+            position: absolute;
+            top: 50px;
+            left: 10px;
+            background-color: rgba(0, 0, 0, 0.8);
+            padding: 10px;
+            border-radius: 5px;
+            max-width: 300px;
+            font-family: monospace;
+            font-size: 12px;
+            z-index: 999;
             display: none;
+        }
+        
+        #error-panel {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background-color: rgba(255, 0, 0, 0.8);
+            padding: 20px;
+            border-radius: 10px;
+            max-width: 80%;
+            font-family: monospace;
+            font-size: 14px;
+            z-index: 2001;
+            display: none;
+            text-align: center;
+        }
+        
+        #error-panel h2 {
+            color: white;
+            margin-top: 0;
+        }
+        
+        #error-panel pre {
+            text-align: left;
+            background-color: rgba(0, 0, 0, 0.5);
+            padding: 10px;
+            border-radius: 5px;
+            overflow: auto;
+            max-height: 200px;
+        }
+        
+        #error-panel button {
+            margin-top: 15px;
+            padding: 8px 15px;
+            background-color: white;
+            color: #FF5722;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-weight: bold;
         }
     </style>
 </head>
@@ -96,8 +163,23 @@
         <p>If the game doesn't load within a few seconds, please check your browser console for errors.</p>
     </div>
 
-    <!-- Explicitly add a start button in case JavaScript has issues -->
+    <!-- Start button -->
     <button id="start-game-button">Start Game</button>
+
+    <!-- Debug toggle -->
+    <button id="debug-toggle">Debug Mode</button>
+    <div id="debug-panel">
+        <h3>Debug Information</h3>
+        <div id="debug-content"></div>
+    </div>
+    
+    <!-- Error panel -->
+    <div id="error-panel">
+        <h2>Error Loading Game</h2>
+        <div id="error-message"></div>
+        <pre id="error-stack"></pre>
+        <button id="error-retry">Retry</button>
+    </div>
 
     <canvas id="gameCanvas"></canvas>
     
@@ -128,79 +210,156 @@
     </div>
 
     <script>
-        // Fallback initialization if module loading fails
-        let moduleLoadFailed = false;
+        // Set up error handling
+        window.onerror = function(message, source, lineno, colno, error) {
+            console.error('Global error caught:', message, error);
+            showErrorPanel(message, error?.stack || 'No stack trace available');
+            return true; // Prevent default error handling
+        };
         
-        // Error handling for module loading
-        window.addEventListener('error', function(event) {
-            console.error('Script error detected:', event);
-            moduleLoadFailed = true;
-            
+        // Show error panel
+        function showErrorPanel(message, stack) {
+            const errorPanel = document.getElementById('error-panel');
+            const errorMessage = document.getElementById('error-message');
+            const errorStack = document.getElementById('error-stack');
             const loading = document.getElementById('loading');
-            if (loading) {
-                loading.style.display = 'none';
-            }
             
-            const startButton = document.getElementById('start-game-button');
-            if (startButton) {
-                startButton.style.display = 'block';
+            if (loading) loading.style.display = 'none';
+            
+            if (errorPanel && errorMessage && errorStack) {
+                errorMessage.textContent = message;
+                errorStack.textContent = stack;
+                errorPanel.style.display = 'block';
             }
-        });
+        }
         
-        // Show start button if modules haven't loaded after 5 seconds
-        setTimeout(() => {
-            const loading = document.getElementById('loading');
-            if (loading && loading.style.display !== 'none') {
-                loading.style.display = 'none';
-                
-                const startButton = document.getElementById('start-game-button');
-                if (startButton) {
-                    startButton.style.display = 'block';
-                }
+        // Set up retry button
+        const retryButton = document.getElementById('error-retry');
+        if (retryButton) {
+            retryButton.addEventListener('click', function() {
+                window.location.reload();
+            });
+        }
+        
+        // Check if modules are supported
+        function isModuleSupported() {
+            try {
+                new Function('import("")');
+                return true;
+            } catch (err) {
+                return false;
             }
-        }, 5000);
+        }
         
-        document.getElementById('start-game-button').addEventListener('click', function() {
-            this.style.display = 'none';
-            // Load the fallback game starter
-            const script = document.createElement('script');
-            script.src = 'src/startGame.js';
-            document.body.appendChild(script);
-        });
+        // Load fallback if modules are not supported
+        if (!isModuleSupported()) {
+            console.log('ES modules not supported, loading fallback');
+            const fallbackScript = document.createElement('script');
+            fallbackScript.src = './src/fallback.js';
+            document.body.appendChild(fallbackScript);
+        }
     </script>
 
-    <!-- Load main script as a module -->
     <script type="module">
-        try {
-            // Check if the module system works by importing a simple module
-            import('./src/main.js')
-                .then(() => {
-                    console.log('Module system working, game loaded successfully');
-                    // Hide loading screen
-                    const loading = document.getElementById('loading');
-                    if (loading) {
-                        loading.style.display = 'none';
-                    }
-                })
-                .catch(error => {
-                    console.error('Module loading failed:', error);
-                    moduleLoadFailed = true;
+        // Hide loading screen
+        window.addEventListener('DOMContentLoaded', () => {
+            try {
+                const loading = document.getElementById('loading');
+                if (loading) {
+                    loading.style.display = 'none';
+                }
+                
+                // Set up debug toggle
+                const debugToggle = document.getElementById('debug-toggle');
+                const debugPanel = document.getElementById('debug-panel');
+                const debugContent = document.getElementById('debug-content');
+                
+                // Global debug flag
+                window.DEBUG_MODE = false;
+                
+                if (debugToggle && debugPanel) {
+                    debugToggle.addEventListener('click', () => {
+                        window.DEBUG_MODE = !window.DEBUG_MODE;
+                        debugPanel.style.display = window.DEBUG_MODE ? 'block' : 'none';
+                        debugToggle.textContent = window.DEBUG_MODE ? 'Hide Debug' : 'Debug Mode';
+                        
+                        // Log debug status
+                        console.log(`Debug mode ${window.DEBUG_MODE ? 'enabled' : 'disabled'}`);
+                    });
                     
-                    // Hide loading screen and show start button
-                    const loading = document.getElementById('loading');
-                    if (loading) {
-                        loading.style.display = 'none';
-                    }
-                    
-                    const startButton = document.getElementById('start-game-button');
-                    if (startButton) {
-                        startButton.style.display = 'block';
-                    }
-                });
-        } catch (error) {
-            console.error('Error in module script:', error);
-            moduleLoadFailed = true;
-        }
+                    // Update debug panel
+                    setInterval(() => {
+                        if (window.DEBUG_MODE && debugContent) {
+                            const gameInfo = window.GAME_INFO || { status: 'Game not started' };
+                            debugContent.innerHTML = `
+                                <div>Time: ${new Date().toLocaleTimeString()}</div>
+                                <div>Game Status: ${gameInfo.status || 'Unknown'}</div>
+                                <div>FPS: ${gameInfo.fps || 'N/A'}</div>
+                                <div>Player: ${gameInfo.player || 'None'}</div>
+                                <div>Entities: ${gameInfo.entities || 'N/A'}</div>
+                                <div>Canvas: ${gameInfo.canvas || 'N/A'}</div>
+                            `;
+                        }
+                    }, 500);
+                }
+                
+                // Set up start button
+                const startButton = document.getElementById('start-game-button');
+                if (startButton) {
+                    startButton.addEventListener('click', () => {
+                        startButton.style.display = 'none';
+                        
+                        // Show loading screen while importing
+                        if (loading) loading.style.display = 'flex';
+                        
+                        // First test if modules work at all
+                        import('./src/test.js')
+                            .then(testModule => {
+                                console.log('Test module loaded successfully');
+                                
+                                // Now try to load the game
+                                import('./src/gameStarter.js')
+                                    .then(module => {
+                                        console.log('Game starter loaded');
+                                        if (loading) loading.style.display = 'none';
+                                        module.startGame();
+                                    })
+                                    .catch(error => {
+                                        console.error('Error loading game starter:', error);
+                                        if (loading) loading.style.display = 'none';
+                                        showErrorPanel(
+                                            'Failed to load the game module', 
+                                            error.stack || error.message || 'Unknown error'
+                                        );
+                                    });
+                            })
+                            .catch(error => {
+                                console.error('Error loading test module:', error);
+                                if (loading) loading.style.display = 'none';
+                                showErrorPanel(
+                                    'ES Modules not working', 
+                                    'Your browser may not support ES modules or there may be a server configuration issue.\n\n' + 
+                                    (error.stack || error.message || 'Unknown error')
+                                );
+                            });
+                    });
+                }
+            } catch (error) {
+                console.error('Error in initialization:', error);
+                showErrorPanel(
+                    'Error initializing the game', 
+                    error.stack || error.message || 'Unknown error'
+                );
+            }
+        });
+    </script>
+    
+    <!-- Fallback for browsers that don't support type="module" -->
+    <script nomodule>
+        console.log('Module script not supported, loading fallback');
+        const fallbackScript = document.createElement('script');
+        fallbackScript.src = './src/fallback.js';
+        document.body.appendChild(fallbackScript);
     </script>
 </body>
 </html> 
