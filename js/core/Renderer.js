@@ -30,31 +30,21 @@ export class Renderer {
         this.ctx.fillStyle = 'rgba(30, 0, 0, 0.9)';
         this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
         
-        // Draw grid for reference
+        // Draw grid for reference (disabled)
         this.drawGrid();
         
         // Draw game entities - directly access the gameEngine
         if (this.game && this.game.gameEngine) {
             // Draw the game entities
             this.game.gameEngine.draw(this.ctx);
-            
-            // Draw additional debug info
-            this.ctx.fillStyle = 'white';
-            this.ctx.font = '14px Arial';
-            this.ctx.fillText(`Entities: Nutrients: ${this.game.gameEngine.nutrients.length}, Enemies: ${this.game.gameEngine.enemies.length}`, 10, 80);
-            
-            // Draw player info if available
-            if (this.game.gameEngine.player) {
-                this.ctx.fillText(`Player: x=${Math.round(this.game.gameEngine.player.x)}, y=${Math.round(this.game.gameEngine.player.y)}`, 10, 100);
-            }
         } else {
             console.error('Game engine not available:', this.game);
             // Draw fallback content
             this.drawFallbackContent();
         }
         
-        // Debug info
-        this.drawDebugInfo();
+        // Only show score, not debug info
+        this.drawScore();
     }
     
     /**
@@ -111,15 +101,54 @@ export class Renderer {
     }
     
     /**
-     * Draw debug information
+     * Draw only the score
+     */
+    drawScore() {
+        if (this.game && this.game.gameEngine && typeof this.game.gameEngine.score !== 'undefined') {
+            this.ctx.save();
+            
+            // Draw score with larger font in top-right corner
+            this.ctx.fillStyle = '#ffcc00'; // Bright yellow for score
+            this.ctx.font = 'bold 24px Arial';
+            this.ctx.textAlign = 'right';
+            this.ctx.fillText(`Score: ${this.game.gameEngine.score || 0}`, this.canvas.width - 20, 30);
+            
+            this.ctx.restore();
+        }
+    }
+    
+    /**
+     * Draw debug information - now disabled in main render
      */
     drawDebugInfo() {
+        // Debug info is now disabled
+        return;
+        
+        /* Original debug info code
         this.ctx.save();
+        
+        // Create a semi-transparent background for better readability
+        this.ctx.fillStyle = 'rgba(0, 0, 0, 0.7)';
+        this.ctx.fillRect(5, 5, 300, 120);
+        
+        // Draw score with larger font and prominent position
+        this.ctx.fillStyle = '#ffcc00'; // Bright yellow for score
+        this.ctx.font = 'bold 18px Arial';
+        this.ctx.fillText(`Score: ${this.game && this.game.gameEngine ? this.game.gameEngine.score || 0 : 0}`, 15, 30);
+        
+        // Draw other debug info with better spacing
         this.ctx.fillStyle = 'white';
         this.ctx.font = '14px Arial';
-        this.ctx.fillText(`Canvas: ${this.canvas.width}x${this.canvas.height}`, 10, 20);
-        this.ctx.fillText(`Game Engine: ${this.game && this.game.gameEngine ? 'Available' : 'Not Available'}`, 10, 40);
-        this.ctx.fillText(`Player: ${this.game && this.game.gameEngine && this.game.gameEngine.player ? 'Available' : 'Not Available'}`, 10, 60);
+        this.ctx.fillText(`Canvas: ${this.canvas.width}x${this.canvas.height}`, 15, 55);
+        this.ctx.fillText(`Game Engine: ${this.game && this.game.gameEngine ? 'Available' : 'Not Available'}`, 15, 75);
+        this.ctx.fillText(`Player: ${this.game && this.game.gameEngine && this.game.gameEngine.player ? 'Available' : 'Not Available'}`, 15, 95);
+        
+        // If we have entities info, display it below other debug info
+        if (this.game && this.game.gameEngine) {
+            this.ctx.fillText(`Entities: Nutrients: ${this.game.gameEngine.nutrients.length}, Enemies: ${this.game.gameEngine.enemies.length}`, 15, 115);
+        }
+        
         this.ctx.restore();
+        */
     }
 } 
